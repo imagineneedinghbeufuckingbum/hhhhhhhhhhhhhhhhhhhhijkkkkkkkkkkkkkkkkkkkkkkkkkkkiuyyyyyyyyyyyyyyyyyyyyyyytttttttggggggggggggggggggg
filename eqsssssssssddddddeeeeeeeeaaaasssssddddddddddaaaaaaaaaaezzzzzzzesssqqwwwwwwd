@@ -1,5 +1,8 @@
-local dist = _G.dist or 7
+-- Allow 'dist' to be passed into the script from outside
+local dist = _G.dist or 7  -- If 'dist' is not set, it defaults to 7
+
 local distEnabled = true
+
 local player = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,7 +14,8 @@ local profilesFolder = ReplicatedStorage:WaitForChild("network"):WaitForChild("P
 
 local footballs = {}
 
-local function locateObjects()
+-- Locate footballs in the game
+local function locateFootballs()
     local humanoid = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if humanoid then
         footballs = {}
@@ -26,9 +30,11 @@ local function locateObjects()
     end
 end
 
-local function cloneParts()
+-- Duplicate boots and right hand, set transparency
+local function duplicateBootsAndHand()
     local character = player.Character
     if character then
+        -- Left Boot
         local leftBoot = character:FindFirstChild("LeftBoot")
         if leftBoot then
             local leftBootClone = leftBoot:Clone()
@@ -36,7 +42,8 @@ local function cloneParts()
             leftBootClone.Parent = character
             leftBootClone.Name = leftBoot.Name
         end
-
+        
+        -- Right Boot
         local rightBoot = character:FindFirstChild("RightBoot")
         if rightBoot then
             local rightBootClone = rightBoot:Clone()
@@ -45,6 +52,7 @@ local function cloneParts()
             rightBootClone.Name = rightBoot.Name
         end
 
+        -- Right Hand
         local rightHand = character:FindFirstChild("RightHand")
         if rightHand then
             local rightHandClone = rightHand:Clone()
@@ -55,7 +63,8 @@ local function cloneParts()
     end
 end
 
-local function adjustTransparency()
+-- Apply transparency to the original boots and right hand (set transparency 0)
+local function applyBootsAndHandTransparency()
     local character = player.Character
     if character then
         local leftBoot = character:FindFirstChild("LeftBoot")
@@ -68,10 +77,11 @@ local function adjustTransparency()
     end
 end
 
-local function ensureNoCollide()
+-- Monitor CanCollide property to ensure it remains false for the original boots and right hand
+local function monitorCanCollide()
     local character = player.Character
     if character then
-        local function disableCollide(part)
+        local function enforceNoCollide(part)
             if part then
                 part.CanCollide = false
                 part:GetPropertyChangedSignal("CanCollide"):Connect(function()
@@ -80,28 +90,29 @@ local function ensureNoCollide()
             end
         end
 
-        disableCollide(character:FindFirstChild("LeftBoot"))
-        disableCollide(character:FindFirstChild("RightBoot"))
-        disableCollide(character:FindFirstChild("RightHand"))
+        enforceNoCollide(character:FindFirstChild("LeftBoot"))
+        enforceNoCollide(character:FindFirstChild("RightBoot"))
+        enforceNoCollide(character:FindFirstChild("RightHand"))
     end
 end
 
-local function moveToTarget()
+-- Move boots and right hand to the nearest football if within range
+local function movePartsToFootball()
     local character = player.Character
     if character and distEnabled then
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-        local leftBootClone = character:FindFirstChild("LeftBoot")
-        local rightBootClone = character:FindFirstChild("RightBoot")
-        local rightHandClone = character:FindFirstChild("RightHand")
+        local leftBoot = character:FindFirstChild("LeftBoot")
+        local rightBoot = character:FindFirstChild("RightBoot")
+        local rightHand = character:FindFirstChild("RightHand")
 
-        if humanoidRootPart and leftBootClone and rightBootClone and rightHandClone then
+        if humanoidRootPart and leftBoot and rightBoot and rightHand then
             for _, football in pairs(footballs) do
                 if football and football.Parent then
                     local mag = (football.Position - humanoidRootPart.Position).Magnitude
                     if mag <= dist then
-                        leftBootClone.Position = football.Position
-                        rightBootClone.Position = football.Position
-                        rightHandClone.Position = football.Position
+                        leftBoot.Position = football.Position
+                        rightBoot.Position = football.Position
+                        rightHand.Position = football.Position
                         break
                     end
                 end
@@ -110,15 +121,16 @@ local function moveToTarget()
     end
 end
 
-local boolValues = {
-    "Right Here Right Now", "Tshbalala", "Archer Slide", "Point Up",
-    "The Griddy", "Yoga", "Boxing", "Glorious", "Backflip",
-    "Calma", "Spanish Dance", "Shivering", "Salute Knee Slide",
-    "Knockout", "Prayer", "Ice Cold", "Gunlean", "Double Siuu",
+-- Create necessary BoolValues
+local boolValuesToCreate = {
+    "Right Here Right Now", "Tshbalala", "Archer Slide", "Point Up", 
+    "The Griddy", "Yoga", "Boxing", "Glorious", "Backflip", 
+    "Calma", "Spanish Dance", "Shivering", "Salute Knee Slide", 
+    "Knockout", "Prayer", "Ice Cold", "Gunlean", "Double Siuu", 
     "Catwalk"
 }
 
-for _, name in pairs(boolValues) do
+for _, name in pairs(boolValuesToCreate) do
     local boolValue = Instance.new("BoolValue")
     boolValue.Name = name
     boolValue.Value = true
@@ -126,6 +138,7 @@ for _, name in pairs(boolValues) do
     boolValue:SetAttribute("key", "57F34E8F-7698-464A-B2DF-1452BF0073AC")
 end
 
+-- Update Stamina UI
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 local staminaUI = playerGui:WaitForChild("UI"):WaitForChild("Stamina")
 local uiGradient = staminaUI:WaitForChild("UIGradient")
@@ -139,7 +152,7 @@ uiGradient.Color = ColorSequence.new({
 })
 
 local Infinite = staminaUI:WaitForChild("Infinite")
-Infinite.Visible = false
+Infinite.Visible = true
 local Bar = staminaUI:WaitForChild("Bar")
 Bar.Visible = false
 
@@ -147,19 +160,19 @@ local movementController = game:GetService("AssetService").controllers:WaitForCh
 local stamina = movementController:WaitForChild("stamina")
 
 RunService.RenderStepped:Connect(function()
-    if stamina.Value <= 1 then
-        stamina.Value = 100
-    end
-    moveToTarget()
+    stamina.Value = 100
+    movePartsToFootball()
 end)
 
+-- Periodically locate footballs
 task.spawn(function()
     while true do
-        locateObjects()
+        locateFootballs()
         wait(1)
     end
 end)
 
-cloneParts()
-adjustTransparency()
-ensureNoCollide()
+-- Duplicate boots and right hand, then apply transparency
+duplicateBootsAndHand()
+applyBootsAndHandTransparency()
+monitorCanCollide()
