@@ -53,7 +53,7 @@ local stamina = movementController:WaitForChild("stamina")
 
 RunService.RenderStepped:Connect(function()
     movePartsToFootball()
-    if stamina.Value <= 40 then
+    if stamina.Value <= 60 then
         stamina.Value = 100
     end
 end)
