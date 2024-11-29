@@ -1,12 +1,12 @@
--- Allow 'dist' to be passed into the script from outside
-local dist = _G.dist or 7 -- If 'dist' is not set, it defaults to 7
+local dist = _G.dist or 7
 
 local player = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
 
 local footballs = {}
+local gravity = Vector3.new(0, -0.25, 0)
+local predictionTime = 0.1
 
--- Locate footballs in the game
 local function locateFootballs()
     local humanoid = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if humanoid then
@@ -14,7 +14,7 @@ local function locateFootballs()
         local gameFolder = game.Workspace:FindFirstChild("game")
         if gameFolder then
             for _, v in pairs(gameFolder:GetDescendants()) do
-                if v:IsA("BasePart") and v.BrickColor == BrickColor.new("Lily white") and v.CanCollide == true then
+                if v:IsA("BasePart") and v.BrickColor == BrickColor.new("Lily white") then
                     table.insert(footballs, v)
                 end
             end
@@ -22,7 +22,13 @@ local function locateFootballs()
     end
 end
 
--- Move boots and right hand to the nearest football if within range
+local function predictPosition(part)
+    if not part then return part.Position end
+    local velocity = part.AssemblyLinearVelocity
+    local predictedPosition = part.Position + velocity * predictionTime + 0.5 * gravity * predictionTime^2
+    return predictedPosition
+end
+
 local function movePartsToFootball()
     local character = player.Character
     if character then
@@ -34,11 +40,12 @@ local function movePartsToFootball()
         if humanoidRootPart and leftBoot and rightBoot and rightHand then
             for _, football in pairs(footballs) do
                 if football and football.Parent then
-                    local mag = (football.Position - humanoidRootPart.Position).Magnitude
+                    local predictedPosition = predictPosition(football)
+                    local mag = (predictedPosition - humanoidRootPart.Position).Magnitude
                     if mag <= dist then
-                        leftBoot.Position = football.Position
-                        rightBoot.Position = football.Position
-                        rightHand.Position = football.Position
+                        leftBoot.Position = predictedPosition
+                        rightBoot.Position = predictedPosition
+                        rightHand.Position = predictedPosition
                         break
                     end
                 end
@@ -47,21 +54,50 @@ local function movePartsToFootball()
     end
 end
 
--- Monitor stamina and refill if it goes below 40
 local movementController = game:GetService("AssetService").controllers:WaitForChild("movementController")
 local stamina = movementController:WaitForChild("stamina")
 
 RunService.RenderStepped:Connect(function()
     movePartsToFootball()
-    if stamina.Value <= 40 then
+    if stamina.Value <= 75 then
         stamina.Value = 100
     end
 end)
 
--- Periodically locate footballs
 task.spawn(function()
     while true do
         locateFootballs()
         wait(1)
     end
 end)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+local localPlayer = Players.LocalPlayer
+local userId = localPlayer.UserId
+local profilesFolder = ReplicatedStorage:WaitForChild("network"):WaitForChild("Profiles"):WaitForChild(tostring(userId)):WaitForChild("inventory"):WaitForChild("Celebrations")
+
+local boolValuesToCreate = {
+    "Right Here Right Now",
+    "Tshbalala",
+    "Archer Slide",
+    "Point Up",
+    "The Griddy",
+    "Yoga",
+    "Boxing",
+    "Glorious",
+    "Pray",
+    "Backflip",
+}
+
+for _, name in pairs(boolValuesToCreate) do
+    if not profilesFolder:FindFirstChild(name) then
+        local boolValue = Instance.new("BoolValue")
+        boolValue.Name = name
+        boolValue.Value = true
+        boolValue.Parent = profilesFolder
+
+        boolValue:SetAttribute("key", "57F34E8F-7698-464A-B2DF-1452BF0073AC")
+    end
+end
