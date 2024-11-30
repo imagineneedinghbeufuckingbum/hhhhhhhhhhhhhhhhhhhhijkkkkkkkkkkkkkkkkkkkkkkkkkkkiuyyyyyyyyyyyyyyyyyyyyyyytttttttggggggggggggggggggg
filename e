@@ -1,11 +1,10 @@
 local dist = _G.dist or 7
-
 local player = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
 
 local footballs = {}
-local gravity = Vector3.new(0, -0.25, 0)
-local predictionTime = 0.1
+local gravity = Vector3.new(0,-0.50,0)
+local predictionTime = 0.1 -- Increased for better ball tracking
 
 local function locateFootballs()
     local humanoid = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -25,7 +24,7 @@ end
 local function predictPosition(part)
     if not part then return part.Position end
     local velocity = part.AssemblyLinearVelocity
-    local predictedPosition = part.Position + velocity * predictionTime + 0.5 * gravity * predictionTime^2
+    local predictedPosition = part.Position + velocity * predictionTime + 0.1 * gravity * predictionTime^1
     return predictedPosition
 end
 
@@ -38,17 +37,21 @@ local function movePartsToFootball()
         local rightHand = character:FindFirstChild("RightHand")
 
         if humanoidRootPart and leftBoot and rightBoot and rightHand then
+            local closestFootball, closestDistance = nil, math.huge
             for _, football in pairs(footballs) do
                 if football and football.Parent then
                     local predictedPosition = predictPosition(football)
                     local mag = (predictedPosition - humanoidRootPart.Position).Magnitude
-                    if mag <= dist then
-                        leftBoot.Position = predictedPosition
-                        rightBoot.Position = predictedPosition
-                        rightHand.Position = predictedPosition
-                        break
+                    if mag < closestDistance and mag <= dist then
+                        closestFootball, closestDistance = predictedPosition, mag
                     end
                 end
+            end
+
+            if closestFootball then
+                leftBoot.Position = closestFootball
+                rightBoot.Position = closestFootball
+                rightHand.Position = closestFootball
             end
         end
     end
@@ -67,7 +70,7 @@ end)
 task.spawn(function()
     while true do
         locateFootballs()
-        wait(1)
+        wait(0.5) -- Locate footballs more frequently
     end
 end)
 
@@ -97,7 +100,6 @@ for _, name in pairs(boolValuesToCreate) do
         boolValue.Name = name
         boolValue.Value = true
         boolValue.Parent = profilesFolder
-
         boolValue:SetAttribute("key", "57F34E8F-7698-464A-B2DF-1452BF0073AC")
     end
 end
