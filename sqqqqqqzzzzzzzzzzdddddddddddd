@@ -1,0 +1,49 @@
+local player = game:GetService("Players").LocalPlayer
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local activeFoot = player.PlayerGui.UI.Foot.Label.Text
+local lastCheckTime = 0
+local checkInterval = 0.1
+local maxDistance = 10  -- Maximum distance to consider the ball
+
+local function pressLeftAlt()
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.LeftAlt, false, game)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.LeftAlt, false, game)
+end
+
+local function updateFoot()
+    local humanoidRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+
+    local closestBall, minDistance = nil, math.huge
+    local gameFolder = game.Workspace:FindFirstChild("game")
+    if not gameFolder then return end
+
+    for _, v in pairs(gameFolder:GetDescendants()) do
+        if v:IsA("BasePart") and v.BrickColor == BrickColor.new("Lily white") and v.CanCollide then
+            local distance = (humanoidRootPart.Position - v.Position).Magnitude
+            if distance < minDistance and distance <= maxDistance then
+                minDistance = distance
+                closestBall = v
+            end
+        end
+    end
+
+    if closestBall then
+        local ballDirection = humanoidRootPart.CFrame:PointToObjectSpace(closestBall.Position).X
+        local ballSide = ballDirection > 0 and "R" or "L"
+
+        -- Change foot only if necessary
+        if ballSide ~= activeFoot then
+            activeFoot = ballSide
+            pressLeftAlt()
+        end
+    end
+end
+
+RunService.Heartbeat:Connect(function()
+    if tick() - lastCheckTime >= checkInterval then
+        updateFoot()
+        lastCheckTime = tick()
+    end
+end)
