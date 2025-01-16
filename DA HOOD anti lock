@@ -1,0 +1,116 @@
+local notificationLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/laagginq/ui-libraries/main/xaxas-notification/src.lua"))();
+local notifications = notificationLibrary.new({
+    NotificationLifetime = 3.5, 
+    NotificationPosition = "Middle",
+
+    TextFont = Enum.Font.Code,
+    TextColor = Color3.fromRGB(255, 255, 255),
+    TextSize = 16.575,
+
+    TextStrokeTransparency = 0, 
+    TextStrokeColor = Color3.fromRGB(0, 0, 0)
+});
+
+notifications:BuildNotificationUI();
+notifications:Notify("Loaded");
+
+local Imgui = loadstring(game:HttpGetAsync("https://pastebin.com/raw/7gC4ttyU", true))().Init(game:GetService("CoreGui"))
+
+Imgui:Connect(function()
+    -- use a unique window size, rather than default
+    local windowSize = Imgui.State(Vector2.new(300, 400))
+
+    Imgui.Window({"Antilock GUI"}, {size = windowSize})
+
+        if Imgui.Button({"Network"}).clicked() then
+            local lp = game.Players.LocalPlayer
+            local runservice = game:GetService("RunService")
+            getgenv().kf = true
+            getgenv().xd = 0
+            while getgenv().kf do     
+            task.wait()     
+            local loop = runservice.Heartbeat:Connect(function()         
+            sethiddenproperty(lp.Character.HumanoidRootPart, "NetworkIsSleeping", true)         
+            task.wait()         
+            sethiddenproperty(lp.Character.HumanoidRootPart, "NetworkIsSleeping", false)     
+            end) 
+            task.wait(getgenv().xd)             
+            if loop then         
+            loop:Disconnect()     
+            end 
+            end  
+            setfflag("S2PhysicsSenderRate", 0.05) 
+            setfflag("PhysicsSenderMaxBandwidthBps", math.pi/10)--what will execute when you click the button
+        end
+  
+        if Imgui.Button({"Math random (KEY BIND IS Z)"}).clicked() then
+            local RunService = game:GetService("RunService")
+
+            getgenv().refusal = {
+                Key = Enum.KeyCode.Z,
+                Enabled = false,
+            }
+            
+            game:GetService("UserInputService").InputBegan:Connect(function(input)
+                if input.KeyCode == getgenv().refusal.Key then
+                    getgenv().refusal.Enabled = not getgenv().refusal.Enabled
+            
+                    if getgenv().refusal.Enabled then
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "Skidded",
+                            Text = "on",
+                            Duration = 2,
+                        })
+                    else
+                        game.StarterGui:SetCore("SendNotification", {
+                            Title = "Skidded",
+                            Text = "off",
+                            Duration = 2,
+                        })
+                    end
+                end
+            end)
+            
+            RunService.Heartbeat:Connect(function()
+                if getgenv().refusal.Enabled then
+                    local v = game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(0.01), 0)
+            
+                    local randomVelocity = Vector3.new(
+                        math.random(-3000, 3000),
+                        math.random(-3000, 3000),
+                        math.random(-3000, 3000)
+                    )
+            
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = randomVelocity
+                    RunService.RenderStepped:Wait()
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = v
+                end
+            end)
+        end
+
+        if Imgui.Button({"Zero prediction"}).clicked() then
+            _G.PredictionBreaker = true
+
+            game.RunService.Heartbeat:Connect(function()
+                if _G.PredictionBreaker then    
+                local CurrentVelocity = game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity
+                game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+                game.RunService.RenderStepped:Wait()
+                game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = CurrentVelocity
+                end    
+            end)
+        end
+
+        if Imgui.Button({"Jump prediction"}).clicked() then
+            local Plr = game.Players.LocalPlayer
+
+Plr.Character:WaitForChild("Humanoid").StateChanged:Connect(function(old,new)
+    if new == Enum.HumanoidStateType.Freefall == true then
+        wait(0.27)
+        game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(0, -15, 0)
+    end
+end)
+
+end
+end)
